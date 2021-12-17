@@ -1,4 +1,4 @@
-export default class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
+export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
     constructor(
         initialState: StateAlphabet,
         initialStackSymbol: StackAlphabet,
@@ -131,7 +131,7 @@ type ClearAction = {action: "clear"}
 
 type ResultOfStackAction<T, A extends StackAction<T>> = A extends PopAction<T> ? T : void
 
-class Stack<T> {
+export class Stack<T> {
     constructor() {
         this.#stack = []
     }
