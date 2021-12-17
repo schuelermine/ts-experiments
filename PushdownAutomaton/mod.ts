@@ -2,7 +2,8 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
     constructor(
         initialState: StateAlphabet,
         initialStackSymbol: StackAlphabet,
-        transition: TransitionFunction<StackAlphabet,StateAlphabet,InputAlphabet>
+        transition: TransitionFunction<StackAlphabet,StateAlphabet,InputAlphabet>,
+        acceptStates: Set<StateAlphabet>,
     ) {
         this.#stack = new Stack()
         this.#stack.push(initialStackSymbol)
@@ -13,6 +14,7 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
             stackSymbol: initialStackSymbol,
             state: initialState
         }
+        this.#acceptStates = acceptStates
         this.#input = new Stack()
     }
     input(input: InputAlphabet[]) {
@@ -20,18 +22,10 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
     }
     advance() {
         let stackSymbol = this.#stack.head()
-        if (typeof stackSymbol === "undefined") {
-            this.#result = "accept"
-            return this
-        }
         let action1 = this.#transition(this.#state, stackSymbol)
         let action2
         if (action1.action === "pop") {
             let inputSymbol = this.#input.pop()
-            if (typeof inputSymbol === "undefined") {
-                this.#result = "reject"
-                return this
-            }
             action2 = action1.continue(inputSymbol)
         } else {
             action2 = action1.continue
@@ -104,6 +98,7 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
     #state: StateAlphabet
     #transition: TransitionFunction<StackAlphabet,StateAlphabet,InputAlphabet>
     #result: null | "accept" | "reject"
+    #acceptStates: Set<StateAlphabet>
     #input: Stack<InputAlphabet>
 }
 
@@ -114,7 +109,7 @@ type TransitionFunction<StackAlphabet,StateAlphabet,InputAlphabet> =
     ) => MaybePopInputAction<InputAlphabet,PushdownAutomatonAction<StackAlphabet,StateAlphabet>>
 
 type MaybePopInputAction<T,R> = PopInputAction<T,R> | IgnoreInputAction<R>
-type PopInputAction<T,R> = {action: "pop", continue: (inputSymbol: T) => R}
+type PopInputAction<T,R> = {action: "pop", continue: (inputSymbol: T | undefined) => R}
 type IgnoreInputAction<R> = {action: "ignore", continue: R}
 
 interface PushdownAutomatonAction<StackAlphabet,StateAlphabet> {
