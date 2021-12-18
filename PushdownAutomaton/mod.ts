@@ -4,7 +4,6 @@ export default class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet
         initialState: StateAlphabet,
         initialStackSymbol: StackAlphabet,
         transition: TransitionFunction<StackAlphabet,StateAlphabet,InputAlphabet>,
-        acceptStates: Set<StateAlphabet>,
     ) {
         this.#stack = new Stack()
         this.#stack.push(initialStackSymbol)
@@ -15,7 +14,6 @@ export default class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet
             stackSymbol: initialStackSymbol,
             state: initialState
         }
-        this.#acceptStates = acceptStates
         this.#input = new Stack()
     }
     input(input: InputAlphabet[]) {
@@ -112,7 +110,6 @@ export default class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet
     #state: StateAlphabet
     #transition: TransitionFunction<StackAlphabet,StateAlphabet,InputAlphabet>
     #result: null | "accept" | "reject"
-    #acceptStates: Set<StateAlphabet>
     #input: Stack<InputAlphabet>
     //#endregion
 }
