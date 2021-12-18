@@ -24,7 +24,10 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
         let stackSymbol = this.#stack.head()
         let action1 = this.#transition(this.#state, stackSymbol)
         let action2
-        if (action1.action === "pop") {
+        if (action1.action === "resolve") {
+            this.#result = action1.result
+            return
+        } if (action1.action === "pop") {
             let inputSymbol = this.#input.pop()
             action2 = action1.continue(inputSymbol)
         } else {
@@ -105,12 +108,13 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
 type TransitionFunction<StackAlphabet,StateAlphabet,InputAlphabet> =
     (
         state: StateAlphabet,
-        stackSymbol: StackAlphabet
-    ) => MaybePopInputAction<InputAlphabet,PushdownAutomatonAction<StackAlphabet,StateAlphabet>>
+        stackSymbol: StackAlphabet | undefined
+    ) => PDAAction<InputAlphabet,PushdownAutomatonAction<StackAlphabet,StateAlphabet>>
 
-type MaybePopInputAction<T,R> = PopInputAction<T,R> | IgnoreInputAction<R>
+type PDAAction<T,R> = PopInputAction<T,R> | IgnoreInputAction<R> | ResolveAction
 type PopInputAction<T,R> = {action: "pop", continue: (inputSymbol: T | undefined) => R}
 type IgnoreInputAction<R> = {action: "ignore", continue: R}
+type ResolveAction = {action: "resolve", result: "accept" | "reject"}
 
 interface PushdownAutomatonAction<StackAlphabet,StateAlphabet> {
     newState: StateAlphabet
