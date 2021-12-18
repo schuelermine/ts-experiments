@@ -1,4 +1,5 @@
-export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
+export default class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
+    //#region Initialization
     constructor(
         initialState: StateAlphabet,
         initialStackSymbol: StackAlphabet,
@@ -20,6 +21,8 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
     input(input: InputAlphabet[]) {
         this.#input = Stack.fromArray(input)
     }
+    //#endregion
+    //#region Operations
     advance() {
         let stackSymbol = this.#stack.head()
         let action1 = this.#transition(this.#state, stackSymbol)
@@ -38,9 +41,6 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
         this.#stack.action(action2.stackAction)
         return this
     }
-    check() {
-        return this.#result
-    }
     reset() {
         this.#stack = new Stack()
         this.#stack.push(this.#initialState.stackSymbol)
@@ -48,6 +48,11 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
         this.#result = null
         this.#input = new Stack()
         return this
+    }
+    //#endregion
+    //#region Accessors
+    getResult() {
+        return this.#result
     }
     getState() {
         return this.#state
@@ -67,6 +72,8 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
     getInputHead() {
         return this.#input.head()
     }
+    //#endregion
+    //#region Unsafe & private fields methods
     rawGetRemainingInput() {
         return this.#input
     }
@@ -95,6 +102,8 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
     appendInputArray(input: InputAlphabet[]) {
         this.#input.appendArray(input)
     }
+    //#endregion
+    //#region Private fields
     #initialState: {
         stackSymbol: StackAlphabet
         state: StateAlphabet
@@ -105,23 +114,26 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
     #result: null | "accept" | "reject"
     #acceptStates: Set<StateAlphabet>
     #input: Stack<InputAlphabet>
+    //#endregion
 }
 
 type TransitionFunction<StackAlphabet,StateAlphabet,InputAlphabet> =
     (
         state: StateAlphabet,
         stackSymbol: StackAlphabet | undefined
-    ) => InputActiion<InputAlphabet,PushdownAutomatonAction<StackAlphabet,StateAlphabet>>
+    ) => InputAction<InputAlphabet,PushdownAutomatonAction<StackAlphabet,StateAlphabet>>
 
-type InputActiion<T,C> = PopInputAction<T,C> | IgnoreInputAction<C>
+type InputAction<T,C> = PopInputAction<T,C> | IgnoreInputAction<C>
 type PopInputAction<T,C> = {action: "pop", continue: (inputSymbol: T | undefined) => C}
 type IgnoreInputAction<C> = {action: "ignore", continue: C}
 
-type PushdownAutomatonAction<StackAlphabet,StateAlphabet> = {
+type PushdownAutomatonAction<StackAlphabet,StateAlphabet> = ContinueAction<StackAlphabet,StateAlphabet> | ResolveAction
+type ContinueAction<StackAlphabet,StateAlphabet> = {
     action: "continue"
-    state: StateAlphabet
     stackAction: DeleteAction | PushAction<StackAlphabet> | IgnoreAction
-} | {
+    state: StateAlphabet
+}
+type ResolveAction = {
     action: "resolve"
     result: "accept" | "reject"
 }
@@ -135,7 +147,7 @@ type ClearAction = {action: "clear"}
 
 type ResultOfStackAction<T, A extends StackAction<T>> = A extends PopAction<T> ? T : void
 
-export class Stack<T> {
+class Stack<T> {
     constructor() {
         this.#stack = []
     }
@@ -160,7 +172,7 @@ export class Stack<T> {
     }
     appendArray(array: T[]) {
         this.#stack.push(...array)
-    }
+    } // TODO: Method to append other stack
     action<A extends StackAction<T>>(action: A): ResultOfStackAction<T,A> {
         if (action.action === "delete") {
             this.delete()
@@ -181,18 +193,20 @@ export class Stack<T> {
     #stack: T[]
 }
 
-// just for fun: swapping w/o direct access to the array
-const swap: <T>(this: Stack<T>) => boolean = function() {
-    let item1 = this.pop()
-    if (typeof item1 === "undefined") {
-        return false
-    }
-    let item2 = this.pop()
-    if (typeof item2 === "undefined") {
+namespace Unused {
+    // just for fun: swapping w/o direct access to the array
+    const swap: <T>(this: Stack<T>) => boolean = function() {
+        let item1 = this.pop()
+        if (typeof item1 === "undefined") {
+            return false
+        }
+        let item2 = this.pop()
+        if (typeof item2 === "undefined") {
+            this.push(item1)
+            return false
+        }
+        this.push(item2)
         this.push(item1)
-        return false
+        return true
     }
-    this.push(item2)
-    this.push(item1)
-    return true
 }
