@@ -24,15 +24,17 @@ export class PushdownAutomaton<StackAlphabet,StateAlphabet,InputAlphabet> {
         let stackSymbol = this.#stack.head()
         let action1 = this.#transition(this.#state, stackSymbol)
         let action2
-        if (action1.action === "resolve") {
-            this.#result = action1.result
-            return
-        } if (action1.action === "pop") {
+        if (action1.action === "pop") {
             let inputSymbol = this.#input.pop()
             action2 = action1.continue(inputSymbol)
         } else {
             action2 = action1.continue
         }
+        if (action2.action === "resolve") {
+            this.#result = action2.result
+            return this
+        }
+        this.#state = action2.state
         this.#stack.action(action2.stackAction)
         return this
     }
@@ -109,16 +111,19 @@ type TransitionFunction<StackAlphabet,StateAlphabet,InputAlphabet> =
     (
         state: StateAlphabet,
         stackSymbol: StackAlphabet | undefined
-    ) => PDAAction<InputAlphabet,PushdownAutomatonAction<StackAlphabet,StateAlphabet>>
+    ) => InputActiion<InputAlphabet,PushdownAutomatonAction<StackAlphabet,StateAlphabet>>
 
-type PDAAction<T,R> = PopInputAction<T,R> | IgnoreInputAction<R> | ResolveAction
-type PopInputAction<T,R> = {action: "pop", continue: (inputSymbol: T | undefined) => R}
-type IgnoreInputAction<R> = {action: "ignore", continue: R}
-type ResolveAction = {action: "resolve", result: "accept" | "reject"}
+type InputActiion<T,C> = PopInputAction<T,C> | IgnoreInputAction<C>
+type PopInputAction<T,C> = {action: "pop", continue: (inputSymbol: T | undefined) => C}
+type IgnoreInputAction<C> = {action: "ignore", continue: C}
 
-interface PushdownAutomatonAction<StackAlphabet,StateAlphabet> {
-    newState: StateAlphabet
+type PushdownAutomatonAction<StackAlphabet,StateAlphabet> = {
+    action: "continue"
+    state: StateAlphabet
     stackAction: DeleteAction | PushAction<StackAlphabet> | IgnoreAction
+} | {
+    action: "resolve"
+    result: "accept" | "reject"
 }
 
 type StackAction<T> = DeleteAction | PushAction<T> | PopAction<T> | IgnoreAction | ClearAction
